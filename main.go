@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/codebarz/go-micorservices/handlers"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -16,8 +17,18 @@ func main() {
 
 	gp := handlers.NewProduct(l)
 
-	ss := http.NewServeMux()
-	ss.Handle("/", gp)
+	ss := mux.NewRouter()
+
+	getRouter := ss.Methods("GET").Subrouter()
+	getRouter.HandleFunc("/", gp.GetProducts)
+
+	putRouter := ss.Methods("PUT").Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", gp.UpdateProduct)
+	putRouter.Use(gp.JSONValidationMiddleware)
+
+	postRouter := ss.Methods("POST").Subrouter()
+	postRouter.HandleFunc("/", gp.AddProduct)
+	postRouter.Use(gp.JSONValidationMiddleware)
 
 	s := &http.Server{
 		Addr:         ":9090",
